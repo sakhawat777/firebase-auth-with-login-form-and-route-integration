@@ -2,13 +2,17 @@ import React, { useState } from 'react'
 import './App.css';
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut  } from "firebase/auth";
 import FirebaseApp from './Firebase/firebase.config';
+import { createUserWithEmailAndPassword } from "firebase/auth";
 FirebaseApp();
 function App() {
   const  [user, setUser] = useState({
     isSignIn: false,
     name: '',
     email: '',
-    photo: ''
+    password: '',
+    photo: '',
+    error: '',
+    success: false
   });
   const auth = getAuth();
   const provider = new GoogleAuthProvider();
@@ -46,7 +50,58 @@ signOut(auth).then(() => {
   console.log(error);
 });
   }
+const handleSubmit = (e) => {
+// console.log(user.name, user.email, user.password);
+if(user.name && user.email && user.password){
+  const auth = getAuth();
+  createUserWithEmailAndPassword(auth, user.email, user.password)
+    .then(res => {
+      // Signed in 
+      const newUserInfo = {...user};
+      newUserInfo.error = '';
+      newUserInfo.success = true;
+      setUser(newUserInfo); 
 
+      // const user = userCredential.user;
+      // ...
+    })
+    .catch((error) => {
+      //const errorCode = error.code;
+      //const errorMessage = error.message;
+     // console.log(errorCode, errorMessage);
+      const newUserInfo = {...user};
+      newUserInfo.error = error.message;
+      newUserInfo.success = true;
+      setUser(newUserInfo);
+      // ..
+     
+    });
+}
+// stop default reload when click submit 
+  e.preventDefault();
+}
+
+const handleBlur = (e) => {
+ let isFieldValid;
+  if(e.target.name === 'email'){
+    isFieldValid = /\S+@\S+\.\S+/.test(e.target.value);
+    
+  }
+  if(e.target.name === 'password'){
+    const isPasswordValid = /^[a-zA-Z0-9!@#$%^&*]{6,16}$/.test(e.target.value);
+    const passwordHasNumber = /\d{1}/.test(e.target.value);
+
+    isFieldValid = isPasswordValid && passwordHasNumber;
+  }
+  if(e.target.name === 'name'){
+    isFieldValid = /^[a-zA-Z ]{2,30}$/.test(e.target.value);
+  }
+  if(isFieldValid){
+    const newUserInfo = {...user};
+    newUserInfo[e.target.name] = e.target.value;
+    setUser(newUserInfo); 
+  }
+}
 	return <div className="App">
     {
       user.isSignIn? <button onClick={handleSignOut}>Sign Out</button> : 
@@ -60,11 +115,16 @@ signOut(auth).then(() => {
       </div>
     }
     <h1>Our Own Authentication</h1>
-    <form >
-    <input type="text" placeholder='Your E-mail' required /> <br />
-    <input type="password" name="" placeholder='Your Password' required /> <br />
-    <input type="submit" value="Submit" />
+    
+    <form onSubmit={handleSubmit}>
+      <input type="text" onBlur={handleBlur} name="name" placeholder='Write your name here' required /> <br />
+    <input type="text" onBlur={handleBlur} name='email' placeholder='Your E-mail' required /> <br />
+    <input type="password" onBlur={handleBlur} name="password" placeholder='Your Password' required /> <br />
+    <input type="submit" value="Submit" /> 
     </form>
+    <p style={{color: 'red'}}>{user.error}</p>
+    {user.success &&  <p style={{color: 'green'}}>User Created Successfully.</p> }
+   
   </div>;
 }
 
