@@ -3,10 +3,14 @@ import './App.css';
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut  } from "firebase/auth";
 import FirebaseApp from './Firebase/firebase.config';
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import {signInWithEmailAndPassword } from "firebase/auth";
+import {updateProfile } from "firebase/auth";
 FirebaseApp();
 function App() {
+  const [newUser, setNewUser] = useState(false);
   const  [user, setUser] = useState({
     isSignIn: false,
+    newUser: false,
     name: '',
     email: '',
     password: '',
@@ -50,9 +54,19 @@ signOut(auth).then(() => {
   console.log(error);
 });
   }
+  const updateUserName = (name) =>{
+  const auth = getAuth();
+  updateProfile(auth.currentUser, {
+  displayName: name
+  }).then(() => {
+  console.log("User name updated successfully");
+  }).catch((error) => {
+  console.log(error); 
+  });
+  }
 const handleSubmit = (e) => {
 // console.log(user.name, user.email, user.password);
-if(user.name && user.email && user.password){
+if(newUser && user.name && user.email && user.password){
   const auth = getAuth();
   createUserWithEmailAndPassword(auth, user.email, user.password)
     .then(res => {
@@ -61,6 +75,7 @@ if(user.name && user.email && user.password){
       newUserInfo.error = '';
       newUserInfo.success = true;
       setUser(newUserInfo); 
+      updateUserName(user.name);
 
       // const user = userCredential.user;
       // ...
@@ -75,6 +90,28 @@ if(user.name && user.email && user.password){
       setUser(newUserInfo);
       // ..
      
+    });
+}
+if(!newUser && user.email && user.password){
+  const auth = getAuth();
+  signInWithEmailAndPassword(auth, user.email, user.password)
+    .then((res) => {
+      // Signed in 
+      //const user = userCredential.user;
+      // ...
+      const newUserInfo = {...user};
+      newUserInfo.error = '';
+      newUserInfo.success = true;
+      setUser(newUserInfo); 
+      console.log(res.user);
+    })
+    .catch((error) => {
+      // const errorCode = error.code;
+      // const errorMessage = error.message;
+      const newUserInfo = {...user};
+      newUserInfo.error = error.message;
+      newUserInfo.success = true;
+      setUser(newUserInfo);
     });
 }
 // stop default reload when click submit 
@@ -115,15 +152,16 @@ const handleBlur = (e) => {
       </div>
     }
     <h1>Our Own Authentication</h1>
-    
+    <input type="checkbox" onChange={()=>setNewUser(!newUser) } name="newUser" id="" />
+    <label htmlFor="newUser">New User Sign Up</label>
     <form onSubmit={handleSubmit}>
-      <input type="text" onBlur={handleBlur} name="name" placeholder='Write your name here' required /> <br />
-    <input type="text" onBlur={handleBlur} name='email' placeholder='Your E-mail' required /> <br />
-    <input type="password" onBlur={handleBlur} name="password" placeholder='Your Password' required /> <br />
-    <input type="submit" value="Submit" /> 
+     {newUser && <input type="text" onBlur={handleBlur} name="name" placeholder='Write your name here' required />}  <br />
+    <input type="text" onBlur={handleBlur} name='email' placeholder='Your E-mail'required /> <br />
+    <input type="password" onBlur={handleBlur} name="password" autoComplete='on' placeholder='Your Password' required /> <br />
+    <input type="submit" value={newUser? 'Sign up': 'Sign in'} /> 
     </form>
     <p style={{color: 'red'}}>{user.error}</p>
-    {user.success &&  <p style={{color: 'green'}}>User Created Successfully.</p> }
+    {user.success &&  <p style={{color: 'green'}}>User {newUser? 'Created': 'Logged In'} Successfully.</p> }
    
   </div>;
 }
