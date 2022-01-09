@@ -5,6 +5,8 @@ import FirebaseApp from './Firebase/firebase.config';
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import {signInWithEmailAndPassword } from "firebase/auth";
 import {updateProfile } from "firebase/auth";
+import { FacebookAuthProvider } from "firebase/auth";
+
 FirebaseApp();
 function App() {
   const [newUser, setNewUser] = useState(false);
@@ -20,6 +22,7 @@ function App() {
   });
   const auth = getAuth();
   const provider = new GoogleAuthProvider();
+  const fbProvider = new FacebookAuthProvider();
   const handleSignIn = () => {
     signInWithPopup(auth, provider)
     .then((result) => {
@@ -38,6 +41,33 @@ function App() {
     });
 
   }
+ const handleFBSignIn = () => {
+  const auth = getAuth();
+signInWithPopup(auth, fbProvider)
+  .then((result) => {
+    // The signed-in user info.
+    const user = result.user;
+    console.log(user);
+
+    // This gives you a Facebook Access Token. You can use it to access the Facebook API.
+    const credential = FacebookAuthProvider.credentialFromResult(result);
+    const accessToken = credential.accessToken;
+
+    // ...
+  })
+  .catch((error) => {
+    // Handle Errors here.
+    const errorCode = error.code;
+    const errorMessage = error.message;
+    // The email of the user's account used.
+    const email = error.email;
+    // The AuthCredential type that was used.
+    const credential = FacebookAuthProvider.credentialFromError(error);
+
+    // ...
+  });
+
+ }
   const handleSignOut = () => {
     const auth = getAuth();
 signOut(auth).then(() => {
@@ -142,8 +172,9 @@ const handleBlur = (e) => {
 	return <div className="App">
     {
       user.isSignIn? <button onClick={handleSignOut}>Sign Out</button> : 
-      <button onClick={handleSignIn}>Sign In</button>
-    }
+      <button onClick={handleSignIn}>Sign in using google</button>
+    } <br />
+    <button onClick={handleFBSignIn}>Sign in using Facebook</button>
     {
       user.isSignIn && <div>
         <p>Welcome, {user.name}</p>
@@ -151,6 +182,7 @@ const handleBlur = (e) => {
         <img src={user.photo} alt="" />
       </div>
     }
+   
     <h1>Our Own Authentication</h1>
     <input type="checkbox" onChange={()=>setNewUser(!newUser) } name="newUser" id="" />
     <label htmlFor="newUser">New User Sign Up</label>
